@@ -9,7 +9,8 @@ import os, fnmatch
 # Upload sensors for the following operating systems
 OPERATING_SYSTEM_FILTER = [
         "windows",
-        "linux",
+        "centos",
+        "ubuntu",
         "mac"
         ]
 
@@ -39,6 +40,8 @@ for ostype in OPERATING_SYSTEM_FILTER:
   print("Found {} - Uploading...".format(sensor))
   try:
     s3.meta.client.upload_file(Filename=sensor, Bucket=bucket, Key=sensor)
+    aws_sensor = s3.Bucket(bucket).Object(sensor)
+    aws_sensor.Acl().put(ACL='public-read')
   except Exception as msg:
     print("Error uploading file: ")
     print(msg)
