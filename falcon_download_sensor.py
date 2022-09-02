@@ -19,9 +19,10 @@ from falconpy import SensorDownload
 # Globals
 # Download sensors for the following operating systems
 OPERATING_SYSTEM_FILTER = [
-        f"platform: 'windows'", 
-        f"platform:'linux'+os:'Ubuntu*'", 
-        f"platform: 'mac'"
+        [f"platform:'linux'+os:'RHEL/CentOS/Oracle'+os_version:~'7'", 'centos'],
+        [f"platform: 'windows'", 'windows'],
+        [f"platform:'linux'+os:'Ubuntu*'", 'ubuntu'],
+        [f"platform: 'mac'", 'mac']
         ]
 
 # Offset for sensor release
@@ -53,23 +54,26 @@ for ostype in OPERATING_SYSTEM_FILTER:
 
     response = falcon.get_sensor_installers_by_query(
             offset=OFFSET,
-            filter=ostype
+            filter=ostype[0]
             )
-  
+
   except Exception as msg:
       print("[ERROR] No sensor available for filter: \"{}\"\nError Stack: {}".format(ostype, msg))
 
-  sensor_id = response['body']['resources'][0]
-  sensor_info = falcon.get_sensor_installer_entities(ids=sensor_id)
-  sensor_desc = sensor_info['body']['resources'][0]['description']
-  sensor_file_type = sensor_info['body']['resources'][0]['file_type']
-  sensor_os = sensor_info['body']['resources'][0]['platform']
-  sensor_version = sensor_info['body']['resources'][0]['version']
+  try:
+    sensor_id = response['body']['resources'][0]
+    sensor_info = falcon.get_sensor_installer_entities(ids=sensor_id)
+    sensor_desc = sensor_info['body']['resources'][0]['description']
+    sensor_file_type = sensor_info['body']['resources'][0]['file_type']
+    sensor_os = sensor_info['body']['resources'][0]['platform']
+    sensor_version = sensor_info['body']['resources'][0]['version']
+  except Exception as msg:
+    print("[ERROR] Response missing data: \"{}\"\nError Stack: {}".format(ostype, msg))
 
   if not SENSOR_FILE_PREFIX or SENSOR_FILE_PREFIX == "":
       sensor_file_name = sensor_info['body']['resources'][0]['name']
   else:
-      sensor_file_name = "{}-{}.{}".format(SENSOR_FILE_PREFIX, sensor_os, sensor_file_type)
+      sensor_file_name = "{}-{}.{}".format(SENSOR_FILE_PREFIX, ostype[1], sensor_file_type)
 
   print("[INFO] Downloading \"{} v{}\" to {}/{}...".format(
       sensor_desc, 
